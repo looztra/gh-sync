@@ -21,20 +21,24 @@ func TestParseArgs(t *testing.T) {
 		name    string
 		args    []string
 		verbose bool
+		dryRun  bool
 		wantErr bool
 		isHelp  bool
 	}{
-		{"no flags", nil, false, false, false},
-		{"verbose long", []string{"--verbose"}, true, false, false},
-		{"verbose short", []string{"-v"}, true, false, false},
-		{"unknown flag", []string{"--unknown"}, false, true, false},
-		{"help long", []string{"--help"}, false, true, true},
-		{"help short", []string{"-h"}, false, true, true},
+		{"no flags", nil, false, false, false, false},
+		{"verbose long", []string{"--verbose"}, true, false, false, false},
+		{"verbose short", []string{"-v"}, true, false, false, false},
+		{"dry-run long", []string{"--dry-run"}, false, true, false, false},
+		{"dry-run short", []string{"-n"}, false, true, false, false},
+		{"verbose and dry-run", []string{"-v", "-n"}, true, true, false, false},
+		{"unknown flag", []string{"--unknown"}, false, false, true, false},
+		{"help long", []string{"--help"}, false, false, true, true},
+		{"help short", []string{"-h"}, false, false, true, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			verbose, err := parseArgs(tt.args)
+			opts, err := parseArgs(tt.args)
 			if tt.isHelp {
 				if err != errHelp {
 					t.Fatalf("parseArgs(%v) error = %v, want errHelp", tt.args, err)
@@ -47,8 +51,11 @@ func TestParseArgs(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if verbose != tt.verbose {
-				t.Errorf("verbose = %v, want %v", verbose, tt.verbose)
+			if opts.verbose != tt.verbose {
+				t.Errorf("verbose = %v, want %v", opts.verbose, tt.verbose)
+			}
+			if opts.dryRun != tt.dryRun {
+				t.Errorf("dryRun = %v, want %v", opts.dryRun, tt.dryRun)
 			}
 		})
 	}
@@ -59,7 +66,7 @@ func TestPrintUsage(t *testing.T) {
 	printUsage(&buf)
 
 	output := buf.String()
-	for _, want := range []string{"--verbose", "--help", "gh sync"} {
+	for _, want := range []string{"--verbose", "--dry-run", "--help", "gh sync"} {
 		if !strings.Contains(output, want) {
 			t.Errorf("usage output missing %q", want)
 		}
@@ -178,7 +185,14 @@ func (e *testEnv) squashMergeOnRemote(branch string) {
 func runSync(t *testing.T) (stdout, stderr string, err error) {
 	t.Helper()
 	var outBuf, errBuf bytes.Buffer
-	err = sync(&outBuf, &errBuf, false)
+	err = sync(&outBuf, &errBuf, false, false)
+	return outBuf.String(), errBuf.String(), err
+}
+
+func runSyncDry(t *testing.T) (stdout, stderr string, err error) {
+	t.Helper()
+	var outBuf, errBuf bytes.Buffer
+	err = sync(&outBuf, &errBuf, false, true)
 	return outBuf.String(), errBuf.String(), err
 }
 
@@ -341,6 +355,145 @@ func TestSync_DeleteCurrentBranch(t *testing.T) {
 	}
 }
 
+func TestSync_DryRunFastForwardCurrentBranch(t *testing.T) {
+	env := newTestEnv(t)
+	env.addRemoteCommit("main", "new.txt", "new content\n")
+	head := strings.TrimSpace(mustExec(t, env.local, "git", "rev-parse", "HEAD"))
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "Would update branch main") {
+		t.Errorf("expected dry-run update message, got stdout: %s", stdout)
+	}
+	if got := strings.TrimSpace(mustExec(t, env.local, "git", "rev-parse", "HEAD")); got != head {
+		t.Errorf("HEAD moved in dry-run: %s -> %s", head, got)
+	}
+}
+
+func TestSync_DryRunFastForwardOtherBranch(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("feature", "feature.txt", "v1\n")
+	env.addRemoteCommit("feature", "feature.txt", "v2\n")
+	before := strings.TrimSpace(mustExec(t, env.local, "git", "rev-parse", "refs/heads/feature"))
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "Would update branch feature") {
+		t.Errorf("expected dry-run update message, got stdout: %s", stdout)
+	}
+	if strings.Contains(stdout, "Updated branch") {
+		t.Errorf("dry-run must not report an update, got stdout: %s", stdout)
+	}
+	if got := strings.TrimSpace(mustExec(t, env.local, "git", "rev-parse", "refs/heads/feature")); got != before {
+		t.Errorf("feature ref moved in dry-run: %s -> %s", before, got)
+	}
+}
+
+func TestSync_DryRunDeleteMergedBranch(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("merged-feature", "merged.txt", "content\n")
+	env.mergeOnRemote("merged-feature")
+	env.deleteRemoteBranch("merged-feature")
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "Would delete branch merged-feature") {
+		t.Errorf("expected dry-run delete message, got stdout: %s", stdout)
+	}
+	if !strings.Contains(stdout, "merged into main") {
+		t.Errorf("expected reason in stdout, got: %s", stdout)
+	}
+	if strings.TrimSpace(mustExec(t, env.local, "git", "branch", "--list", "merged-feature")) == "" {
+		t.Error("branch merged-feature must survive a dry-run")
+	}
+}
+
+func TestSync_DryRunDeleteSquashMergedBranch(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("squash-me", "squash.txt", "squash content\n")
+	env.squashMergeOnRemote("squash-me")
+	env.deleteRemoteBranch("squash-me")
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "Would delete branch squash-me") || !strings.Contains(stdout, "squash-merged into main") {
+		t.Errorf("expected squash-merged dry-run delete message, got stdout: %s\nstderr: %s", stdout, stderr)
+	}
+	if strings.TrimSpace(mustExec(t, env.local, "git", "branch", "--list", "squash-me")) == "" {
+		t.Error("branch squash-me must survive a dry-run")
+	}
+}
+
+func TestSync_DryRunDeleteCurrentBranch(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("current-gone", "gone.txt", "gone\n")
+	env.mergeOnRemote("current-gone")
+	env.deleteRemoteBranch("current-gone")
+	mustExec(t, env.local, "git", "checkout", "current-gone")
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "Would switch to main, then delete branch current-gone") {
+		t.Errorf("expected dry-run switch+delete message, got stdout: %s", stdout)
+	}
+	branch, err := git.CurrentBranch()
+	if err != nil {
+		t.Fatalf("CurrentBranch() error: %v", err)
+	}
+	if branch != "current-gone" {
+		t.Errorf("expected to stay on current-gone, got %s", branch)
+	}
+	if strings.TrimSpace(mustExec(t, env.local, "git", "branch", "--list", "current-gone")) == "" {
+		t.Error("branch current-gone must survive a dry-run")
+	}
+}
+
+func TestSync_DryRunWarningsUnchanged(t *testing.T) {
+	env := newTestEnv(t)
+
+	env.createBranch("not-merged", "unique.txt", "unique\n")
+	env.deleteRemoteBranch("not-merged")
+
+	env.createBranch("diverged", "file.txt", "original\n")
+	env.addRemoteCommit("diverged", "remote.txt", "from remote\n")
+	mustExec(t, env.local, "git", "checkout", "diverged")
+	writeTestFile(t, filepath.Join(env.local, "local.txt"), "local change\n")
+	mustExec(t, env.local, "git", "add", ".")
+	mustExec(t, env.local, "git", "commit", "-m", "local change")
+	mustExec(t, env.local, "git", "checkout", "main")
+
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstdout: %s", err, stdout)
+	}
+	if !strings.Contains(stderr, "seems to contain unpushed commits") {
+		t.Errorf("expected unpushed warning, got stderr: %s", stderr)
+	}
+	if !strings.Contains(stderr, "was deleted on origin, but appears not merged into 'main'") {
+		t.Errorf("expected not-merged warning, got stderr: %s", stderr)
+	}
+	if strings.Contains(stdout, "Would delete") {
+		t.Errorf("unmerged branch must not be previewed for deletion, got stdout: %s", stdout)
+	}
+}
+
 func TestSync_ImplicitUpstream(t *testing.T) {
 	env := newTestEnv(t)
 
@@ -399,6 +552,32 @@ func TestSync_SkipsBranchCheckedOutInWorktree(t *testing.T) {
 	}
 }
 
+func TestSync_DryRunSkipsBranchCheckedOutInWorktree(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("feature", "feature.txt", "v1\n")
+	env.mergeOnRemote("feature")
+	env.deleteRemoteBranch("feature")
+
+	wt := filepath.Join(env.base, "wt")
+	mustExec(t, env.local, "git", "worktree", "add", wt, "feature")
+
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stderr, "skipped feature: checked out in worktree "+wt) {
+		t.Errorf("expected skip message, got stderr: %s", stderr)
+	}
+	if strings.Contains(stdout, "Would delete") {
+		t.Errorf("worktree branch must not be previewed for deletion, got stdout: %s", stdout)
+	}
+	if strings.TrimSpace(mustExec(t, env.local, "git", "branch", "--list", "feature")) == "" {
+		t.Error("branch feature must survive a dry-run")
+	}
+}
+
 func TestSync_UnmergedBranchInWorktreeMentionsWorktree(t *testing.T) {
 	env := newTestEnv(t)
 	env.createBranch("wip", "wip.txt", "v1\n")
@@ -427,7 +606,7 @@ func TestSync_ColorOutput(t *testing.T) {
 	env.chdir()
 
 	var stdout, stderr bytes.Buffer
-	err := sync(&stdout, &stderr, true)
+	err := sync(&stdout, &stderr, true, false)
 	if err != nil {
 		t.Fatalf("sync error: %v", err)
 	}
@@ -446,7 +625,7 @@ func TestSync_VerboseOutput(t *testing.T) {
 	git.Color = false
 	git.Stderr = &stderr
 
-	err := sync(&stdout, &stderr, false)
+	err := sync(&stdout, &stderr, false, false)
 	if err != nil {
 		t.Fatalf("sync error: %v", err)
 	}
@@ -468,7 +647,7 @@ func TestSync_NoRemotes(t *testing.T) {
 	git.Color = false
 
 	var stdout, stderr bytes.Buffer
-	err := sync(&stdout, &stderr, false)
+	err := sync(&stdout, &stderr, false, false)
 	if err == nil {
 		t.Fatal("expected error when no remotes exist")
 	}

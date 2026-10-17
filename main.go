@@ -14,7 +14,7 @@ import (
 var errHelp = errors.New("help requested")
 
 func main() {
-	verbose, err := parseArgs(os.Args[1:])
+	opts, err := parseArgs(os.Args[1:])
 	if err != nil {
 		if errors.Is(err, errHelp) {
 			printUsage(os.Stdout)
@@ -25,28 +25,37 @@ func main() {
 	}
 
 	useColor := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
-	git.Verbose = verbose
+	git.Verbose = opts.verbose
 	git.Color = useColor
 
-	if err := sync(os.Stdout, os.Stderr, useColor); err != nil {
+	if err := sync(os.Stdout, os.Stderr, useColor, opts.dryRun); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 }
 
-func parseArgs(args []string) (verbose bool, err error) {
+// options holds the parsed command-line flags.
+type options struct {
+	verbose bool
+	dryRun  bool
+}
+
+func parseArgs(args []string) (options, error) {
+	var opts options
 	for _, arg := range args {
 		switch {
 		case arg == "--verbose" || arg == "-v":
-			verbose = true
+			opts.verbose = true
+		case arg == "--dry-run" || arg == "-n":
+			opts.dryRun = true
 		case arg == "--help" || arg == "-h":
-			return false, errHelp
+			return options{}, errHelp
 		default:
-			return false, fmt.Errorf("unknown argument: %s", arg)
+			return options{}, fmt.Errorf("unknown argument: %s", arg)
 		}
 	}
 
-	return verbose, nil
+	return opts, nil
 }
 
 func printUsage(w io.Writer) {
@@ -60,10 +69,12 @@ If a branch seems merged and its upstream was deleted, delete it.
 
 Flags:
   --verbose, -v     Log each git command to stderr
+  --dry-run, -n     Preview changes; no branch is moved or deleted
+                    (git fetch --prune still runs)
   -h, --help        Show this help`)
 }
 
-func sync(stdout, stderr io.Writer, useColor bool) error {
+func sync(stdout, stderr io.Writer, useColor, dryRun bool) error {
 	var green, brightGreen, red, brightRed, reset string
 	if useColor {
 		green = "\033[32m"
@@ -135,17 +146,22 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 
 			if r.IsAncestor() {
 				// Local is behind — fast-forward.
-				if branch == currentBranch {
-					if err := git.MergeFFOnly(remoteRef); err != nil {
-						return fmt.Errorf("failed to fast-forward %s: %w", branch, err)
-					}
+				if dryRun {
+					fmt.Fprintf(stdout, "%sWould update branch %s%s%s (%s -> %s).\n",
+						green, brightGreen, branch, reset, r.A[:7], r.B[:7])
 				} else {
-					if err := git.UpdateRef(localRef, remoteRef); err != nil {
-						return fmt.Errorf("failed to update %s: %w", branch, err)
+					if branch == currentBranch {
+						if err := git.MergeFFOnly(remoteRef); err != nil {
+							return fmt.Errorf("failed to fast-forward %s: %w", branch, err)
+						}
+					} else {
+						if err := git.UpdateRef(localRef, remoteRef); err != nil {
+							return fmt.Errorf("failed to update %s: %w", branch, err)
+						}
 					}
+					fmt.Fprintf(stdout, "%sUpdated branch %s%s%s (was %s).\n",
+						green, brightGreen, branch, reset, r.A[:7])
 				}
-				fmt.Fprintf(stdout, "%sUpdated branch %s%s%s (was %s).\n",
-					green, brightGreen, branch, reset, r.A[:7])
 			} else {
 				fmt.Fprintf(stderr, "warning: '%s' seems to contain unpushed commits\n", branch)
 			}
@@ -156,16 +172,27 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 				return err
 			}
 
-			shouldDelete := r.IsAncestor()
-
-			// If it wasn't a regular merge, check for a squash-merge.
-			if !shouldDelete {
-				shouldDelete = isSquashMerged(localRef, defaultRef, branch)
+			reason := ""
+			if r.IsAncestor() {
+				reason = fmt.Sprintf("merged into %s", defaultBranch)
+			} else if isSquashMerged(localRef, defaultRef, branch) {
+				// If it wasn't a regular merge, check for a squash-merge.
+				reason = fmt.Sprintf("squash-merged into %s", defaultBranch)
 			}
 
-			if shouldDelete {
+			if reason != "" {
 				if wt, ok := worktreeBranches[branch]; ok {
 					fmt.Fprintf(stderr, "skipped %s: checked out in worktree %s\n", branch, wt)
+					continue
+				}
+				if dryRun {
+					if branch == currentBranch {
+						fmt.Fprintf(stdout, "%sWould switch to %s, then delete branch %s%s%s (was %s): %s\n",
+							red, defaultBranch, brightRed, branch, reset, r.A[:7], reason)
+					} else {
+						fmt.Fprintf(stdout, "%sWould delete branch %s%s%s (was %s): %s\n",
+							red, brightRed, branch, reset, r.A[:7], reason)
+					}
 					continue
 				}
 				if branch == currentBranch {
