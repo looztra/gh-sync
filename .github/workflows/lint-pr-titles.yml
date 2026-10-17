@@ -11,12 +11,18 @@ on:
       - edited
       - synchronize
 
-permissions:
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   lint-pr-title:
+    name: Lint PR title
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # Required to read the PR and post the lint comment.
     steps:
       - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         id: lint_pr_title

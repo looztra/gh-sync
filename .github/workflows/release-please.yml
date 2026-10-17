@@ -4,16 +4,21 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 name: Manage releases
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create tags and GitHub releases.
+      pull-requests: write # Required to open and update the release PR.
     steps:
       # A PAT is required: tags/releases created with GITHUB_TOKEN do not
       # trigger the tag-based `release` workflow that builds the binaries.
