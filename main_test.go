@@ -369,6 +369,33 @@ func TestSync_ImplicitUpstream(t *testing.T) {
 	}
 }
 
+func TestSync_SkipsBranchCheckedOutInWorktree(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("feature", "feature.txt", "v1\n")
+	env.mergeOnRemote("feature")
+	env.deleteRemoteBranch("feature")
+
+	wt := filepath.Join(env.base, "wt")
+	mustExec(t, env.local, "git", "worktree", "add", wt, "feature")
+
+	env.chdir()
+
+	stdout, stderr, err := runSync(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stdout, "skipped feature: checked out in worktree") {
+		t.Errorf("expected skip message, got stdout: %s", stdout)
+	}
+	if !strings.Contains(stdout, wt) {
+		t.Errorf("expected worktree path %s in stdout: %s", wt, stdout)
+	}
+	out := mustExec(t, env.local, "git", "branch", "--list", "feature")
+	if strings.TrimSpace(out) == "" {
+		t.Error("branch feature should not have been deleted")
+	}
+}
+
 func TestSync_ColorOutput(t *testing.T) {
 	env := newTestEnv(t)
 	env.addRemoteCommit("main", "new.txt", "content\n")
