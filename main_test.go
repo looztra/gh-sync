@@ -552,6 +552,32 @@ func TestSync_SkipsBranchCheckedOutInWorktree(t *testing.T) {
 	}
 }
 
+func TestSync_DryRunSkipsBranchCheckedOutInWorktree(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("feature", "feature.txt", "v1\n")
+	env.mergeOnRemote("feature")
+	env.deleteRemoteBranch("feature")
+
+	wt := filepath.Join(env.base, "wt")
+	mustExec(t, env.local, "git", "worktree", "add", wt, "feature")
+
+	env.chdir()
+
+	stdout, stderr, err := runSyncDry(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stderr, "skipped feature: checked out in worktree "+wt) {
+		t.Errorf("expected skip message, got stderr: %s", stderr)
+	}
+	if strings.Contains(stdout, "Would delete") {
+		t.Errorf("worktree branch must not be previewed for deletion, got stdout: %s", stdout)
+	}
+	if strings.TrimSpace(mustExec(t, env.local, "git", "branch", "--list", "feature")) == "" {
+		t.Error("branch feature must survive a dry-run")
+	}
+}
+
 func TestSync_UnmergedBranchInWorktreeMentionsWorktree(t *testing.T) {
 	env := newTestEnv(t)
 	env.createBranch("wip", "wip.txt", "v1\n")
