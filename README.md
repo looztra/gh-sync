@@ -63,6 +63,41 @@ gh extension upgrade wassimk/gh-sync
 gh extension remove gh-sync
 ```
 
+### 🧪 Development
+
+Requires Go (see `go.mod` for the version). Run the test suite with:
+
+```shell
+go test ./...
+```
+
+To try a local build without releasing, either run the binary directly or install the checkout as the extension.
+
+**Run the binary directly.** `gh sync` just executes a `gh-sync` binary, so you can skip `gh` entirely. Run it from the repository you want to sync, since it operates on the current directory:
+
+```shell
+go build -o /tmp/gh-sync .
+cd /path/to/some/repo && /tmp/gh-sync --verbose
+```
+
+**Install the checkout as the extension.** If a released `gh sync` is already installed, remove it first:
+
+```shell
+gh extension remove sync
+go build -o gh-sync .
+gh extension install .
+gh sync
+```
+
+The extension is linked to the checkout directory, so after code changes just run `go build -o gh-sync .` again. The `gh-sync` binary is git-ignored. To go back to the released version:
+
+```shell
+gh extension remove sync
+gh extension install wassimk/gh-sync
+```
+
+`gh extension install <owner>/<repo>` cannot install an unreleased branch, because this is a precompiled extension and `gh` only downloads release assets.
+
 ### 🙏 Attribution
 
 Inspired by [`jacobwgillespie/git-sync`](https://github.com/jacobwgillespie/git-sync), rebuilt as a `gh` CLI extension.
