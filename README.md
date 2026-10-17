@@ -27,6 +27,9 @@ That's it. The command will:
    - **Warn** if the branch has unpushed commits
    - **Delete** if the upstream was removed and the branch was merged (or squash-merged) into the default branch
    - **Warn** if the upstream was removed but the branch appears unmerged
+   - **Skip** a branch that would be deleted if it is checked out in another worktree, since git can't delete it
+
+Messages about skipped or unmerged branches go to stderr.
 
 Branches without explicit tracking configuration are matched by name against the remote.
 
@@ -54,6 +57,19 @@ Clean up a merged branch whose remote was deleted:
 
 ```
 Deleted branch add-user-api (was 7f8e9d0).
+```
+
+Skip a branch that is checked out in another worktree (git can't delete it):
+
+```
+skipped add-user-api: checked out in worktree /home/me/work/add-user-api
+```
+
+If such a branch is unmerged, the usual warning is followed by a note:
+
+```
+warning: 'experiment' was deleted on origin, but appears not merged into 'main'
+note: 'experiment' is checked out in worktree /home/me/work/experiment
 ```
 
 ### 📦 Upgrade / Uninstall
