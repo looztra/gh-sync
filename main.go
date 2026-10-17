@@ -165,7 +165,7 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 
 			if shouldDelete {
 				if wt, ok := worktreeBranches[branch]; ok {
-					fmt.Fprintf(stdout, "skipped %s: checked out in worktree %s\n", branch, wt)
+					fmt.Fprintf(stderr, "skipped %s: checked out in worktree %s\n", branch, wt)
 					continue
 				}
 				if branch == currentBranch {
@@ -182,6 +182,9 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 			} else {
 				fmt.Fprintf(stderr, "warning: '%s' was deleted on %s, but appears not merged into '%s'\n",
 					branch, remote, defaultBranch)
+				if wt, ok := worktreeBranches[branch]; ok {
+					fmt.Fprintf(stderr, "note: '%s' is checked out in worktree %s\n", branch, wt)
+				}
 			}
 		}
 	}

@@ -384,15 +384,40 @@ func TestSync_SkipsBranchCheckedOutInWorktree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
 	}
-	if !strings.Contains(stdout, "skipped feature: checked out in worktree") {
-		t.Errorf("expected skip message, got stdout: %s", stdout)
+	if !strings.Contains(stderr, "skipped feature: checked out in worktree") {
+		t.Errorf("expected skip message, got stderr: %s", stderr)
 	}
-	if !strings.Contains(stdout, wt) {
-		t.Errorf("expected worktree path %s in stdout: %s", wt, stdout)
+	if !strings.Contains(stderr, wt) {
+		t.Errorf("expected worktree path %s in stderr: %s", wt, stderr)
+	}
+	if strings.Contains(stdout, "skipped") {
+		t.Errorf("skip message should not go to stdout: %s", stdout)
 	}
 	out := mustExec(t, env.local, "git", "branch", "--list", "feature")
 	if strings.TrimSpace(out) == "" {
 		t.Error("branch feature should not have been deleted")
+	}
+}
+
+func TestSync_UnmergedBranchInWorktreeMentionsWorktree(t *testing.T) {
+	env := newTestEnv(t)
+	env.createBranch("wip", "wip.txt", "v1\n")
+	env.deleteRemoteBranch("wip")
+
+	wt := filepath.Join(env.base, "wt")
+	mustExec(t, env.local, "git", "worktree", "add", wt, "wip")
+
+	env.chdir()
+
+	_, stderr, err := runSync(t)
+	if err != nil {
+		t.Fatalf("sync error: %v\nstderr: %s", err, stderr)
+	}
+	if !strings.Contains(stderr, "'wip' was deleted on origin, but appears not merged") {
+		t.Errorf("expected not-merged warning, got stderr: %s", stderr)
+	}
+	if !strings.Contains(stderr, "'wip' is checked out in worktree "+wt) {
+		t.Errorf("expected worktree note, got stderr: %s", stderr)
 	}
 }
 
