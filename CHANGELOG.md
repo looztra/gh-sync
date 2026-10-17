@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/looztra/gh-sync/compare/v0.1.0...v0.1.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **sync:** skip branches checked out in other worktrees ([#6](https://github.com/looztra/gh-sync/issues/6)) ([45db1f4](https://github.com/looztra/gh-sync/commit/45db1f4fab47ace74083c6cfb8d752ebb22ac36e))
+
 ## 0.1.0 (2026-10-17)
 
 
