@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/looztra/gh-sync/compare/v0.1.1...v1.0.0) (2026-10-17)
+
+
+### Features
+
+* **sync:** add --dry-run flag to preview fast-forwards and deletions ([#10](https://github.com/looztra/gh-sync/issues/10)) ([aa20bb5](https://github.com/looztra/gh-sync/commit/aa20bb599b09ef6699e0545c9aed5bb601a10f46))
+
+
+### Documentation
+
+* **readme:** point instructions to looztra/gh-sync fork ([#8](https://github.com/looztra/gh-sync/issues/8)) ([36ce0bc](https://github.com/looztra/gh-sync/commit/36ce0bc3d7669a926f02782c6896d5cfc9024a5d))
+
 ## [0.1.1](https://github.com/looztra/gh-sync/compare/v0.1.0...v0.1.1) (2026-10-17)
 
 
