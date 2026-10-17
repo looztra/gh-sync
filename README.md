@@ -39,7 +39,10 @@ Branches without explicit tracking configuration are matched by name against the
 
 ```
 --verbose, -v     Log each git command to stderr
+--dry-run, -n     Preview changes; no branch is moved or deleted
 ```
+
+`--dry-run` still runs `git fetch --prune`, because deleted upstreams are only detectable after remote-tracking refs are pruned. It cannot predict failures that only surface at mutation time (e.g. `merge --ff-only` refusing on a dirty working tree).
 
 ### 📝 Examples
 
@@ -59,6 +62,13 @@ Clean up a merged branch whose remote was deleted:
 
 ```
 Deleted branch add-user-api (was 7f8e9d0).
+```
+
+Preview the same run with `--dry-run`:
+
+```
+Would update branch feature-login (3a1b2c4 -> 9c8b7a6).
+Would delete branch add-user-api (was 7f8e9d0): merged into main
 ```
 
 Skip a branch that is checked out in another worktree (git can't delete it):
