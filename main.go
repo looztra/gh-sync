@@ -94,6 +94,9 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 	// Read branch.*.remote config to know which branches explicitly track the remote
 	branchRemotes := git.BranchRemotes()
 
+	// Branches checked out in other worktrees cannot be deleted by git.
+	worktreeBranches := git.WorktreeBranches()
+
 	// Enumerate local branches
 	branches, err := git.LocalBranches()
 	if err != nil {
@@ -161,6 +164,10 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 			}
 
 			if shouldDelete {
+				if wt, ok := worktreeBranches[branch]; ok {
+					fmt.Fprintf(stderr, "skipped %s: checked out in worktree %s\n", branch, wt)
+					continue
+				}
 				if branch == currentBranch {
 					if err := git.Checkout(defaultBranch); err != nil {
 						return fmt.Errorf("failed to checkout %s: %w", defaultBranch, err)
@@ -175,6 +182,9 @@ func sync(stdout, stderr io.Writer, useColor bool) error {
 			} else {
 				fmt.Fprintf(stderr, "warning: '%s' was deleted on %s, but appears not merged into '%s'\n",
 					branch, remote, defaultBranch)
+				if wt, ok := worktreeBranches[branch]; ok {
+					fmt.Fprintf(stderr, "note: '%s' is checked out in worktree %s\n", branch, wt)
+				}
 			}
 		}
 	}

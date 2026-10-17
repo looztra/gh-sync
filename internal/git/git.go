@@ -1,10 +1,12 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -24,9 +26,20 @@ func execGit(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	out, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return "", gitErr(args, err)
 	}
 	return strings.TrimRight(string(out), "\n"), nil
+}
+
+// gitErr enriches a failed git invocation with the command and its stderr.
+func gitErr(args []string, err error) error {
+	var ee *exec.ExitError
+	if errors.As(err, &ee) {
+		if msg := strings.TrimSpace(string(ee.Stderr)); msg != "" {
+			return fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, msg)
+		}
+	}
+	return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
 }
 
 // Spawn runs a git command with full I/O passthrough to the terminal.
@@ -126,6 +139,46 @@ func LocalBranches() ([]string, error) {
 	return splitLines(out), nil
 }
 
+// WorktreeBranches maps branch name to the worktree path where it is checked
+// out, excluding the current worktree. Branches here cannot be deleted.
+func WorktreeBranches() map[string]string {
+	out, err := execGit("worktree", "list", "--porcelain")
+	if err != nil {
+		return nil
+	}
+
+	current := ""
+	if top, err := execGit("rev-parse", "--show-toplevel"); err == nil {
+		current = resolvePath(top)
+	}
+
+	result := make(map[string]string)
+	path := ""
+	for _, line := range splitLines(out) {
+		switch {
+		case strings.HasPrefix(line, "worktree "):
+			path = strings.TrimPrefix(line, "worktree ")
+		case strings.HasPrefix(line, "branch refs/heads/"):
+			if resolvePath(path) != current {
+				result[strings.TrimPrefix(line, "branch refs/heads/")] = path
+			}
+		}
+	}
+	return result
+}
+
+// resolvePath normalizes a path for comparison, resolving symlinks when possible
+// (macOS temp dirs are symlinked, e.g. /var -> /private/var).
+func resolvePath(p string) string {
+	if p == "" {
+		return ""
+	}
+	if r, err := filepath.EvalSymlinks(p); err == nil {
+		return r
+	}
+	return filepath.Clean(p)
+}
+
 // Fetch fetches from a remote with pruning and progress output.
 func Fetch(remote string) error {
 	return Spawn("fetch", "--prune", "--quiet", "--progress", remote)
@@ -215,4 +268,3 @@ func CommitTree(tree, parent, message string) (string, error) {
 func Cherry(upstream, head string) (string, error) {
 	return execGit("cherry", upstream, head)
 }
-

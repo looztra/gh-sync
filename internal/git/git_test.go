@@ -155,6 +155,23 @@ func TestRevParse(t *testing.T) {
 	}
 }
 
+func TestWorktreeBranches(t *testing.T) {
+	dir := initTestRepo(t)
+	chdir(t, dir)
+
+	mustGit(t, dir, "branch", "feat")
+	wt := filepath.Join(t.TempDir(), "wt")
+	mustGit(t, dir, "worktree", "add", wt, "feat")
+
+	got := WorktreeBranches()
+	if _, ok := got["feat"]; !ok {
+		t.Errorf("expected feat in worktree branches, got %v", got)
+	}
+	if _, ok := got["main"]; ok {
+		t.Error("current worktree branch must be excluded")
+	}
+}
+
 // initTestRepo creates a temporary git repo with a remote and an initial commit.
 func initTestRepo(t *testing.T) string {
 	t.Helper()
