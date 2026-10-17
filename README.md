@@ -4,10 +4,12 @@ A [`gh`](https://cli.github.com/) CLI extension that keeps local branches in syn
 
 This was built to replace the [`sync`](https://hub.github.com/hub-sync.1.html) command from the deprecated [`hub`](https://hub.github.com/) tool.
 
+> **Note:** this repository is a fork of [`wassimk/gh-sync`](https://github.com/wassimk/gh-sync). The upstream project has stalled, so we decided to move on with this repo instead. Install and upgrade from `looztra/gh-sync`, not from the original.
+
 ### 🛠️ Installation
 
 ```shell
-gh extension install wassimk/gh-sync
+gh extension install looztra/gh-sync
 ```
 
 ### 💻 Usage
@@ -75,7 +77,7 @@ note: 'experiment' is checked out in worktree /home/me/work/experiment
 ### 📦 Upgrade / Uninstall
 
 ```shell
-gh extension upgrade wassimk/gh-sync
+gh extension upgrade looztra/gh-sync
 gh extension remove gh-sync
 ```
 
@@ -109,11 +111,11 @@ The extension is linked to the checkout directory, so after code changes just ru
 
 ```shell
 gh extension remove sync
-gh extension install wassimk/gh-sync
+gh extension install looztra/gh-sync
 ```
 
 `gh extension install <owner>/<repo>` cannot install an unreleased branch, because this is a precompiled extension and `gh` only downloads release assets.
 
 ### 🙏 Attribution
 
-Inspired by [`jacobwgillespie/git-sync`](https://github.com/jacobwgillespie/git-sync), rebuilt as a `gh` CLI extension.
+Inspired by [`jacobwgillespie/git-sync`](https://github.com/jacobwgillespie/git-sync), rebuilt as a `gh` CLI extension by [`wassimk/gh-sync`](https://github.com/wassimk/gh-sync), which this repo is forked from and now maintained independently.
