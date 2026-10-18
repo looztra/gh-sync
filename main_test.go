@@ -688,3 +688,29 @@ func writeTestFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestVersionBinary(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "gh-sync")
+	build := exec.Command("go", "build", "-o", bin,
+		"-ldflags", "-X github.com/wassimk/gh-sync/internal/version.Tag=v9.9.9", ".")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("go build: %v\n%s", err, out)
+	}
+
+	// Run from a directory that is not a git repository.
+	for _, flag := range []string{"--version", "-V"} {
+		cmd := exec.Command(bin, flag)
+		cmd.Dir = t.TempDir()
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("%s: %v\nstderr: %s", flag, err, stderr.String())
+		}
+		if !strings.HasPrefix(stdout.String(), "gh-sync v9.9.9 (") || !strings.HasSuffix(stdout.String(), "\n") {
+			t.Errorf("%s stdout = %q, want \"gh-sync v9.9.9 (...) ...\\n\"", flag, stdout.String())
+		}
+		if stderr.Len() != 0 {
+			t.Errorf("%s stderr = %q, want empty", flag, stderr.String())
+		}
+	}
+}

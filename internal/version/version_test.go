@@ -1,6 +1,7 @@
 package version
 
 import (
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -63,5 +64,29 @@ func TestSlug(t *testing.T) {
 				t.Errorf("Slug(%q) = %q, want %q", tt.in, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFromSettings(t *testing.T) {
+	settings := []debug.BuildSetting{
+		{Key: "-compiler", Value: "gc"},
+		{Key: "vcs.revision", Value: "af64d172b980c1b2f1a5d3e4c5b6a7980e1f2a3b"},
+		{Key: "vcs.time", Value: "2026-10-17T15:12:50Z"},
+		{Key: "vcs.modified", Value: "true"},
+	}
+
+	got := fromSettings("v1.0.0", "", settings)
+	want := Info{"v1.0.0", "af64d17-dirty", "2026-10-17T15:12:50Z"}
+	if got != want {
+		t.Errorf("fromSettings() = %+v, want %+v", got, want)
+	}
+
+	settings[3].Value = "false"
+	if got := fromSettings("", "main", settings); got.Commit != "af64d17" {
+		t.Errorf("clean settings: Commit = %q, want af64d17", got.Commit)
+	}
+
+	if got := fromSettings("", "main", nil); got != (Info{"main", "unknown", "unknown"}) {
+		t.Errorf("no settings: got %+v", got)
 	}
 }

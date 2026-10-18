@@ -69,10 +69,14 @@ func Current() Info {
 	if !ok {
 		return describe(Tag, Branch, "", "", false)
 	}
+	return fromSettings(Tag, Branch, bi.Settings)
+}
 
+// fromSettings resolves the identity from the vcs.* build settings.
+func fromSettings(tag, branch string, settings []debug.BuildSetting) Info {
 	var revision, vcsTime string
 	var modified bool
-	for _, s := range bi.Settings {
+	for _, s := range settings {
 		switch s.Key {
 		case "vcs.revision":
 			revision = s.Value
@@ -83,7 +87,7 @@ func Current() Info {
 		}
 	}
 
-	return describe(Tag, Branch, revision, vcsTime, modified)
+	return describe(tag, branch, revision, vcsTime, modified)
 }
 
 // String formats the identity as a single line.
