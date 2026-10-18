@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/looztra/gh-sync/compare/v1.0.0...v1.1.0) (2026-10-18)
+
+
+### Features
+
+* **cli:** add --version flag showing tag, commit and date ([#11](https://github.com/looztra/gh-sync/issues/11)) ([01ab1db](https://github.com/looztra/gh-sync/commit/01ab1dbfbc20914173b9f1867e841e8c6295d5bd))
+
 ## [1.0.0](https://github.com/looztra/gh-sync/compare/v0.1.1...v1.0.0) (2026-10-17)
 
 
