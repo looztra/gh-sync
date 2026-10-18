@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/looztra/gh-sync/internal/git"
+	"github.com/looztra/gh-sync/internal/version"
 	"github.com/mattn/go-isatty"
-	"github.com/wassimk/gh-sync/internal/git"
-	"github.com/wassimk/gh-sync/internal/version"
 )
 
 var (

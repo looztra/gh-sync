@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pkg="github.com/wassimk/gh-sync/internal/version"
+pkg="github.com/looztra/gh-sync/internal/version"
 tag="$(git describe --tags --exact-match --match 'v*' 2>/dev/null || true)"
 branch="$(git symbolic-ref --short -q HEAD 2>/dev/null || true)"
 

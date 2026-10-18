@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wassimk/gh-sync/internal/git"
+	"github.com/looztra/gh-sync/internal/git"
 )
 
 // ---------------------------------------------------------------------------
@@ -693,7 +693,7 @@ func writeTestFile(t *testing.T, path, content string) {
 func TestVersionBinary(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "gh-sync")
 	build := exec.Command("go", "build", "-o", bin,
-		"-ldflags", "-X github.com/wassimk/gh-sync/internal/version.Tag=v9.9.9", ".")
+		"-ldflags", "-X github.com/looztra/gh-sync/internal/version.Tag=v9.9.9", ".")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
 	}

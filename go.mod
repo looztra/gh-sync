@@ -1,4 +1,4 @@
-module github.com/wassimk/gh-sync
+module github.com/looztra/gh-sync
 
 go 1.25.0
 
