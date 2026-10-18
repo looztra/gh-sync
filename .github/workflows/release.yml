@@ -29,7 +29,7 @@ jobs:
           draft_release: true
           # The action runs `go build -ldflags="-s -w"` and then appends this value; the
           # last -ldflags wins, so `-s -w` must be repeated here. The next step guards this.
-          go_build_options: "-ldflags=-s -w -X github.com/wassimk/gh-sync/internal/version.Tag=${{ github.ref_name }}"
+          go_build_options: "-ldflags=-s -w -X github.com/looztra/gh-sync/internal/version.Tag=${{ github.ref_name }}"
       - name: Verify release binary version
         run: |
           out="$(./dist/linux-amd64 --version)"
