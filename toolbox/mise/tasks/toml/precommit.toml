@@ -1,0 +1,9 @@
+["precommit:install"]
+alias = "prek-install"
+description = "Install the prek git hooks"
+run = "prek install"
+
+["precommit:run"]
+alias = "prek-run"
+description = "Run the prek hooks on all files"
+run = "prek run --all-files"

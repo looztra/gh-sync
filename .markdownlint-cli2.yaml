@@ -1,0 +1,5 @@
+---
+globs:
+  - '**/*.md'
+  - '!.mise/**/*.md'
+  - '!CHANGELOG.md'

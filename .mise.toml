@@ -1,7 +1,16 @@
+[tools]
+editorconfig-checker = "3"
+prek = "0.4"
+shellcheck = "0.11"
+shfmt = "3"
+taplo = "0.10"
+
 [settings]
-idiomatic_version_file_enable_tools = ["go"]
+idiomatic_version_file_enable_tools = [
+  "go",
+]
 
 [task_config]
 includes = [
-    "toolbox/mise/tasks/toml/*.toml",
+  "toolbox/mise/tasks/toml/*.toml",
 ]

@@ -1,0 +1,7 @@
+{
+  "Exclude": [
+    "^gh-sync$",
+    "^dist/",
+    "\\.go$"
+  ]
+}
