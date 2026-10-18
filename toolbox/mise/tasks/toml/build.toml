@@ -1,0 +1,10 @@
+[build]
+description = "Build the gh-sync binary with version metadata injected (tag/branch, sha, date)"
+run = "script/build.sh"
+
+["build:version"]
+description = "Build then print the resolved version line"
+run = [
+    "script/build.sh",
+    "./gh-sync --version",
+]

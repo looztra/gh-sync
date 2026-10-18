@@ -18,22 +18,25 @@ import (
 
 func TestParseArgs(t *testing.T) {
 	tests := []struct {
-		name    string
-		args    []string
-		verbose bool
-		dryRun  bool
-		wantErr bool
-		isHelp  bool
+		name      string
+		args      []string
+		verbose   bool
+		dryRun    bool
+		wantErr   bool
+		isHelp    bool
+		isVersion bool
 	}{
-		{"no flags", nil, false, false, false, false},
-		{"verbose long", []string{"--verbose"}, true, false, false, false},
-		{"verbose short", []string{"-v"}, true, false, false, false},
-		{"dry-run long", []string{"--dry-run"}, false, true, false, false},
-		{"dry-run short", []string{"-n"}, false, true, false, false},
-		{"verbose and dry-run", []string{"-v", "-n"}, true, true, false, false},
-		{"unknown flag", []string{"--unknown"}, false, false, true, false},
-		{"help long", []string{"--help"}, false, false, true, true},
-		{"help short", []string{"-h"}, false, false, true, true},
+		{"no flags", nil, false, false, false, false, false},
+		{"verbose long", []string{"--verbose"}, true, false, false, false, false},
+		{"verbose short", []string{"-v"}, true, false, false, false, false},
+		{"dry-run long", []string{"--dry-run"}, false, true, false, false, false},
+		{"dry-run short", []string{"-n"}, false, true, false, false, false},
+		{"verbose and dry-run", []string{"-v", "-n"}, true, true, false, false, false},
+		{"unknown flag", []string{"--unknown"}, false, false, true, false, false},
+		{"help long", []string{"--help"}, false, false, true, true, false},
+		{"help short", []string{"-h"}, false, false, true, true, false},
+		{"version long", []string{"--version"}, false, false, true, false, true},
+		{"version short", []string{"-V"}, false, false, true, false, true},
 	}
 
 	for _, tt := range tests {
@@ -42,6 +45,12 @@ func TestParseArgs(t *testing.T) {
 			if tt.isHelp {
 				if err != errHelp {
 					t.Fatalf("parseArgs(%v) error = %v, want errHelp", tt.args, err)
+				}
+				return
+			}
+			if tt.isVersion {
+				if err != errVersion {
+					t.Fatalf("parseArgs(%v) error = %v, want errVersion", tt.args, err)
 				}
 				return
 			}
@@ -66,7 +75,7 @@ func TestPrintUsage(t *testing.T) {
 	printUsage(&buf)
 
 	output := buf.String()
-	for _, want := range []string{"--verbose", "--dry-run", "--help", "gh sync"} {
+	for _, want := range []string{"--verbose", "--dry-run", "--version, -V", "--help", "gh sync"} {
 		if !strings.Contains(output, want) {
 			t.Errorf("usage output missing %q", want)
 		}

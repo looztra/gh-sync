@@ -9,15 +9,23 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/wassimk/gh-sync/internal/git"
+	"github.com/wassimk/gh-sync/internal/version"
 )
 
-var errHelp = errors.New("help requested")
+var (
+	errHelp    = errors.New("help requested")
+	errVersion = errors.New("version requested")
+)
 
 func main() {
 	opts, err := parseArgs(os.Args[1:])
 	if err != nil {
 		if errors.Is(err, errHelp) {
 			printUsage(os.Stdout)
+			os.Exit(0)
+		}
+		if errors.Is(err, errVersion) {
+			fmt.Fprintln(os.Stdout, version.String())
 			os.Exit(0)
 		}
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
@@ -50,6 +58,8 @@ func parseArgs(args []string) (options, error) {
 			opts.dryRun = true
 		case arg == "--help" || arg == "-h":
 			return options{}, errHelp
+		case arg == "--version" || arg == "-V":
+			return options{}, errVersion
 		default:
 			return options{}, fmt.Errorf("unknown argument: %s", arg)
 		}
@@ -71,6 +81,7 @@ Flags:
   --verbose, -v     Log each git command to stderr
   --dry-run, -n     Preview changes; no branch is moved or deleted
                     (git fetch --prune still runs)
+  --version, -V     Show version information
   -h, --help        Show this help`)
 }
 

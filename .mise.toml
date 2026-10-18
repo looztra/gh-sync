@@ -1,0 +1,7 @@
+[tools]
+go = "1.25"
+
+[task_config]
+includes = [
+    "toolbox/mise/tasks/toml/*.toml",
+]
