@@ -1,0 +1,7 @@
+[settings]
+idiomatic_version_file_enable_tools = ["go"]
+
+[task_config]
+includes = [
+    "toolbox/mise/tasks/toml/*.toml",
+]

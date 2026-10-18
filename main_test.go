@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -18,22 +19,25 @@ import (
 
 func TestParseArgs(t *testing.T) {
 	tests := []struct {
-		name    string
-		args    []string
-		verbose bool
-		dryRun  bool
-		wantErr bool
-		isHelp  bool
+		name      string
+		args      []string
+		verbose   bool
+		dryRun    bool
+		wantErr   bool
+		isHelp    bool
+		isVersion bool
 	}{
-		{"no flags", nil, false, false, false, false},
-		{"verbose long", []string{"--verbose"}, true, false, false, false},
-		{"verbose short", []string{"-v"}, true, false, false, false},
-		{"dry-run long", []string{"--dry-run"}, false, true, false, false},
-		{"dry-run short", []string{"-n"}, false, true, false, false},
-		{"verbose and dry-run", []string{"-v", "-n"}, true, true, false, false},
-		{"unknown flag", []string{"--unknown"}, false, false, true, false},
-		{"help long", []string{"--help"}, false, false, true, true},
-		{"help short", []string{"-h"}, false, false, true, true},
+		{"no flags", nil, false, false, false, false, false},
+		{"verbose long", []string{"--verbose"}, true, false, false, false, false},
+		{"verbose short", []string{"-v"}, true, false, false, false, false},
+		{"dry-run long", []string{"--dry-run"}, false, true, false, false, false},
+		{"dry-run short", []string{"-n"}, false, true, false, false, false},
+		{"verbose and dry-run", []string{"-v", "-n"}, true, true, false, false, false},
+		{"unknown flag", []string{"--unknown"}, false, false, true, false, false},
+		{"help long", []string{"--help"}, false, false, true, true, false},
+		{"help short", []string{"-h"}, false, false, true, true, false},
+		{"version long", []string{"--version"}, false, false, true, false, true},
+		{"version short", []string{"-V"}, false, false, true, false, true},
 	}
 
 	for _, tt := range tests {
@@ -42,6 +46,12 @@ func TestParseArgs(t *testing.T) {
 			if tt.isHelp {
 				if err != errHelp {
 					t.Fatalf("parseArgs(%v) error = %v, want errHelp", tt.args, err)
+				}
+				return
+			}
+			if tt.isVersion {
+				if err != errVersion {
+					t.Fatalf("parseArgs(%v) error = %v, want errVersion", tt.args, err)
 				}
 				return
 			}
@@ -66,7 +76,7 @@ func TestPrintUsage(t *testing.T) {
 	printUsage(&buf)
 
 	output := buf.String()
-	for _, want := range []string{"--verbose", "--dry-run", "--help", "gh sync"} {
+	for _, want := range []string{"--verbose", "--dry-run", "--version, -V", "--help", "gh sync"} {
 		if !strings.Contains(output, want) {
 			t.Errorf("usage output missing %q", want)
 		}
@@ -677,5 +687,32 @@ func writeTestFile(t *testing.T, path, content string) {
 	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestVersionBinary(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "gh-sync")
+	build := exec.Command("go", "build", "-o", bin,
+		"-ldflags", "-X github.com/wassimk/gh-sync/internal/version.Tag=v9.9.9", ".")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("go build: %v\n%s", err, out)
+	}
+
+	// Run from a directory that is not a git repository.
+	want := regexp.MustCompile(`^gh-sync v9\.9\.9 \((?:[0-9a-f]{7}(?:-dirty)?|unknown)\) (?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z|unknown)\n$`)
+	for _, flag := range []string{"--version", "-V"} {
+		cmd := exec.Command(bin, flag)
+		cmd.Dir = t.TempDir()
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("%s: %v\nstderr: %s", flag, err, stderr.String())
+		}
+		if !want.MatchString(stdout.String()) {
+			t.Errorf("%s stdout = %q, want match %s", flag, stdout.String(), want)
+		}
+		if stderr.Len() != 0 {
+			t.Errorf("%s stderr = %q, want empty", flag, stderr.String())
+		}
 	}
 }

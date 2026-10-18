@@ -40,6 +40,7 @@ Branches without explicit tracking configuration are matched by name against the
 ```
 --verbose, -v     Log each git command to stderr
 --dry-run, -n     Preview changes; no branch is moved or deleted
+--version, -V     Show version information
 ```
 
 `--dry-run` still runs `git fetch --prune`, because deleted upstreams are only detectable after remote-tracking refs are pruned. It cannot predict failures that only surface at mutation time (e.g. `merge --ff-only` refusing on a dirty working tree).

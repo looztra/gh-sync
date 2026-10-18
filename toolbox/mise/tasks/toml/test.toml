@@ -1,0 +1,3 @@
+[test]
+description = "Run all Go tests"
+run = "go test ./..."

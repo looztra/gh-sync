@@ -25,3 +25,21 @@ jobs:
       - uses: cli/gh-extension-precompile@76961aa3bd1123d0a6fd42d0a41aca0696937c39 # v2.2.0
         with:
           go_version_file: go.mod
+          # Kept as a draft until the binary is verified, then published below.
+          draft_release: true
+          # The action runs `go build -ldflags="-s -w"` and then appends this value; the
+          # last -ldflags wins, so `-s -w` must be repeated here. The next step guards this.
+          go_build_options: "-ldflags=-s -w -X github.com/wassimk/gh-sync/internal/version.Tag=${{ github.ref_name }}"
+      - name: Verify release binary version
+        run: |
+          out="$(./dist/linux-amd64 --version)"
+          echo "$out"
+          case "$out" in
+            "gh-sync ${GITHUB_REF_NAME} ("*-dirty\)*) echo "binary is stamped dirty" >&2; exit 1 ;;
+            "gh-sync ${GITHUB_REF_NAME} ("*) ;;
+            *) echo "binary does not report tag ${GITHUB_REF_NAME}" >&2; exit 1 ;;
+          esac
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
