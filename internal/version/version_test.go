@@ -75,19 +75,23 @@ func TestFromSettings(t *testing.T) {
 		{Key: "vcs.modified", Value: "true"},
 	}
 
-	got := fromSettings("v1.0.0", "", settings)
+	got := fromSettings("v1.0.0", "", "", settings)
 	want := Info{"v1.0.0", "af64d17-dirty", "2026-10-17T15:12:50Z"}
 	if got != want {
 		t.Errorf("fromSettings() = %+v, want %+v", got, want)
 	}
 
 	settings[3].Value = "false"
-	if got := fromSettings("", "main", settings); got.Commit != "af64d17" {
+	if got := fromSettings("", "main", "v1.0.0", settings); got.Commit != "af64d17" {
 		t.Errorf("clean settings: Commit = %q, want af64d17", got.Commit)
 	}
 
-	if got := fromSettings("", "main", nil); got != (Info{"main", "unknown", "unknown"}) {
+	if got := fromSettings("", "main", "(devel)", nil); got != (Info{"main", "unknown", "unknown"}) {
 		t.Errorf("no settings: got %+v", got)
+	}
+
+	if got := fromSettings("", "", "v1.2.0", nil); got != (Info{"v1.2.0", "unknown", "unknown"}) {
+		t.Errorf("module install: got %+v", got)
 	}
 }
 

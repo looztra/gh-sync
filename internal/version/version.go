@@ -67,11 +67,13 @@ func Current() Info {
 	if !ok {
 		return describe(Tag, Branch, "", "", false)
 	}
-	return fromSettings(Tag, Branch, bi.Settings)
+	return fromSettings(Tag, Branch, bi.Main.Version, bi.Settings)
 }
 
-// fromSettings resolves the identity from the vcs.* build settings.
-func fromSettings(tag, branch string, settings []debug.BuildSetting) Info {
+// fromSettings resolves the identity from the vcs.* build settings. Module-mode
+// installs (`go install ...@v1.2.0`) have no vcs.* settings, so their module
+// version stands in for the tag.
+func fromSettings(tag, branch, mainVersion string, settings []debug.BuildSetting) Info {
 	var revision, vcsTime string
 	var modified bool
 	for _, s := range settings {
@@ -83,6 +85,10 @@ func fromSettings(tag, branch string, settings []debug.BuildSetting) Info {
 		case "vcs.modified":
 			modified = s.Value == "true"
 		}
+	}
+
+	if tag == "" && revision == "" && mainVersion != "" && mainVersion != "(devel)" {
+		tag = mainVersion
 	}
 
 	return describe(tag, branch, revision, vcsTime, modified)
