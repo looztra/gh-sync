@@ -1,3 +1,6 @@
+// gh-sync is a gh CLI extension that keeps local branches in sync with a
+// remote: it fetches, fast-forwards outdated branches, warns about unpushed
+// work, and cleans up branches whose upstream was deleted after merging.
 package main
 
 import (
@@ -7,9 +10,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mattn/go-isatty"
+
 	"github.com/looztra/gh-sync/internal/git"
 	"github.com/looztra/gh-sync/internal/version"
-	"github.com/mattn/go-isatty"
 )
 
 var (
@@ -51,14 +55,14 @@ type options struct {
 func parseArgs(args []string) (options, error) {
 	var opts options
 	for _, arg := range args {
-		switch {
-		case arg == "--verbose" || arg == "-v":
+		switch arg {
+		case "--verbose", "-v":
 			opts.verbose = true
-		case arg == "--dry-run" || arg == "-n":
+		case "--dry-run", "-n":
 			opts.dryRun = true
-		case arg == "--help" || arg == "-h":
+		case "--help", "-h":
 			return options{}, errHelp
-		case arg == "--version" || arg == "-V":
+		case "--version", "-V":
 			return options{}, errVersion
 		default:
 			return options{}, fmt.Errorf("unknown argument: %s", arg)

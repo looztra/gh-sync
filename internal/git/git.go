@@ -1,3 +1,4 @@
+// Package git runs the git command line and parses its output.
 package git
 
 import (

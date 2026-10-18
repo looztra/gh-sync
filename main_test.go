@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,13 +45,13 @@ func TestParseArgs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			opts, err := parseArgs(tt.args)
 			if tt.isHelp {
-				if err != errHelp {
+				if !errors.Is(err, errHelp) {
 					t.Fatalf("parseArgs(%v) error = %v, want errHelp", tt.args, err)
 				}
 				return
 			}
 			if tt.isVersion {
-				if err != errVersion {
+				if !errors.Is(err, errVersion) {
 					t.Fatalf("parseArgs(%v) error = %v, want errVersion", tt.args, err)
 				}
 				return
@@ -669,7 +670,7 @@ func TestSync_NoRemotes(t *testing.T) {
 
 func mustExec(t *testing.T, dir, name string, args ...string) string {
 	t.Helper()
-	cmd := exec.Command(name, args...)
+	cmd := exec.CommandContext(t.Context(), name, args...)
 	if dir != "" {
 		cmd.Dir = dir
 	}
@@ -692,7 +693,7 @@ func writeTestFile(t *testing.T, path, content string) {
 
 func TestVersionBinary(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "gh-sync")
-	build := exec.Command("go", "build", "-o", bin,
+	build := exec.CommandContext(t.Context(), "go", "build", "-o", bin,
 		"-ldflags", "-X github.com/looztra/gh-sync/internal/version.Tag=v9.9.9", ".")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
@@ -701,7 +702,7 @@ func TestVersionBinary(t *testing.T) {
 	// Run from a directory that is not a git repository.
 	want := regexp.MustCompile(`^gh-sync v9\.9\.9 \((?:[0-9a-f]{7}(?:-dirty)?|unknown)\) (?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z|unknown)\n$`)
 	for _, flag := range []string{"--version", "-V"} {
-		cmd := exec.Command(bin, flag)
+		cmd := exec.CommandContext(t.Context(), bin, flag)
 		cmd.Dir = t.TempDir()
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout, cmd.Stderr = &stdout, &stderr

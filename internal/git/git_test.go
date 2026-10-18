@@ -216,7 +216,7 @@ func chdir(t *testing.T, dir string) {
 
 func mustGit(t *testing.T, dir string, args ...string) string {
 	t.Helper()
-	cmd := exec.Command("git", args...)
+	cmd := exec.CommandContext(t.Context(), "git", args...)
 	if dir != "" {
 		cmd.Dir = dir
 	}

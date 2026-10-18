@@ -58,14 +58,3 @@ repos:
         types: [text]
         language: system
         pass_filenames: false
-      - id: gofmt
-        name: Check Go files are formatted with 'gofmt'
-        entry: gofmt -l -w
-        types: [go]
-        language: system
-      - id: go-vet
-        name: Run 'go vet ./...'
-        entry: go vet ./...
-        types: [go]
-        language: system
-        pass_filenames: false
