@@ -1,5 +1,5 @@
-[tools]
-go = "1.25"
+[settings]
+idiomatic_version_file_enable_tools = ["go"]
 
 [task_config]
 includes = [
