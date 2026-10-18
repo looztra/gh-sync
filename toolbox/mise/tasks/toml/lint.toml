@@ -1,0 +1,32 @@
+[lint]
+description = "Run golangci-lint on the whole module"
+run = "golangci-lint run ./..."
+
+["lint:fix"]
+description = "Run golangci-lint with auto-fix and formatters applied"
+run = "golangci-lint run --fix ./..."
+
+[vulncheck]
+description = "Scan the module for known vulnerabilities with govulncheck"
+run = "govulncheck ./..."
+
+[deadcode]
+description = "Report unreachable functions with deadcode (fails if any are found)"
+run = """
+set -euo pipefail
+out="$(deadcode ./...)"
+if [ -n "$out" ]; then
+  echo "$out"
+  echo "deadcode: unreachable functions found"
+  exit 1
+fi
+"""
+
+[check]
+depends = [
+  "lint",
+  "vulncheck",
+  "deadcode",
+  "test",
+]
+description = "Run lint, vulncheck, deadcode and tests"

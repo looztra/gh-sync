@@ -1,0 +1,61 @@
+---
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - prealloc
+    - revive
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: exported
+  exclusions:
+    generated: lax
+    presets:
+      - std-error-handling
+    rules:
+      - path: _test\.go$
+        linters:
+          - errcheck
+          - gosec
+          - unparam
+      # internal/git is a git wrapper: the binary is the constant "git" and
+      # forwarding caller-supplied arguments is its purpose.
+      - path: ^internal/git/git\.go$
+        linters:
+          - gosec
+        text: G204
+      # The git wrapper API has no context.Context parameter yet; threading one
+      # through every exported function is a separate refactor.
+      - path: ^internal/git/git\.go$
+        linters:
+          - noctx
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/looztra/gh-sync
