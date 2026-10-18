@@ -13,7 +13,7 @@ run = "govulncheck ./..."
 [deadcode]
 description = "Report unreachable functions with deadcode (fails if any are found)"
 run = """
-set -euo pipefail
+set -eu
 out="$(deadcode ./...)"
 if [ -n "$out" ]; then
   echo "$out"
