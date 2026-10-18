@@ -26,12 +26,6 @@ repos:
       - id: markdownlint-cli2
         pass_filenames: false
 
-  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.11.1
-    hooks:
-      - id: editorconfig-checker-system # Check editorconfig compliance
-        alias: ec
-
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
@@ -56,6 +50,12 @@ repos:
         name: Check TOML files are formatted with 'taplo'
         entry: taplo format --config .taplo.toml
         types: [toml]
+        language: system
+        pass_filenames: false
+      - id: editorconfig-checker
+        name: Check .editorconfig rules with 'editorconfig-checker'
+        entry: editorconfig-checker
+        types: [text]
         language: system
         pass_filenames: false
       - id: gofmt

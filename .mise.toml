@@ -1,5 +1,5 @@
 [tools]
-"github:editorconfig-checker/editorconfig-checker" = { version = "4", rename_exe = "ec" }
+"github:editorconfig-checker/editorconfig-checker" = "4"
 prek = "0.4"
 shellcheck = "0.11"
 shfmt = "3"
