@@ -1,3 +1,6 @@
+// gh-sync is a gh CLI extension that keeps local branches in sync with a
+// remote: it fetches, fast-forwards outdated branches, warns about unpushed
+// work, and cleans up branches whose upstream was deleted after merging.
 package main
 
 import (
