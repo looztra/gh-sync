@@ -90,3 +90,23 @@ func TestFromSettings(t *testing.T) {
 		t.Errorf("no settings: got %+v", got)
 	}
 }
+
+func TestInfoString(t *testing.T) {
+	tests := []struct {
+		name string
+		info Info
+		want string
+	}{
+		{"tagged", Info{"v1.0.0", "af64d17", "2026-10-17T15:12:50Z"}, "gh-sync v1.0.0 (af64d17) 2026-10-17T15:12:50Z"},
+		{"dirty branch slug", Info{"feat-version-flag", "af64d17-dirty", "2026-10-17T15:12:50Z"}, "gh-sync feat-version-flag (af64d17-dirty) 2026-10-17T15:12:50Z"},
+		{"unknown", Info{"dev", "unknown", "unknown"}, "gh-sync dev (unknown) unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.info.String(); got != tt.want {
+				t.Errorf("Info.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

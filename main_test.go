@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -698,6 +699,7 @@ func TestVersionBinary(t *testing.T) {
 	}
 
 	// Run from a directory that is not a git repository.
+	want := regexp.MustCompile(`^gh-sync v9\.9\.9 \((?:[0-9a-f]{7}(?:-dirty)?|unknown)\) (?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z|unknown)\n$`)
 	for _, flag := range []string{"--version", "-V"} {
 		cmd := exec.Command(bin, flag)
 		cmd.Dir = t.TempDir()
@@ -706,8 +708,8 @@ func TestVersionBinary(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatalf("%s: %v\nstderr: %s", flag, err, stderr.String())
 		}
-		if !strings.HasPrefix(stdout.String(), "gh-sync v9.9.9 (") || !strings.HasSuffix(stdout.String(), "\n") {
-			t.Errorf("%s stdout = %q, want \"gh-sync v9.9.9 (...) ...\\n\"", flag, stdout.String())
+		if !want.MatchString(stdout.String()) {
+			t.Errorf("%s stdout = %q, want match %s", flag, stdout.String(), want)
 		}
 		if stderr.Len() != 0 {
 			t.Errorf("%s stderr = %q, want empty", flag, stderr.String())

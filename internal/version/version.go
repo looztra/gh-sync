@@ -22,7 +22,7 @@ const (
 
 // Info is the resolved build identity.
 type Info struct {
-	Ref    string // tag, "main", branch slug, or "dev"
+	Ref    string // release tag, branch slug (e.g. "main"), or "dev"
 	Commit string // 7-char sha, optionally "-dirty"; "unknown" if absent
 	Date   string // RFC3339 UTC, e.g. "2026-10-17T15:12:50Z"; "unknown" if absent
 }
@@ -33,8 +33,6 @@ func describe(tag, branch, revision, vcsTime string, modified bool) Info {
 	switch {
 	case tag != "":
 		info.Ref = tag
-	case branch == "main":
-		info.Ref = "main"
 	case branch != "":
 		info.Ref = Slug(branch)
 	default:
@@ -91,8 +89,7 @@ func fromSettings(tag, branch string, settings []debug.BuildSetting) Info {
 }
 
 // String formats the identity as a single line.
-func String() string {
-	i := Current()
+func (i Info) String() string {
 	return fmt.Sprintf("gh-sync %s (%s) %s", i.Ref, i.Commit, i.Date)
 }
 

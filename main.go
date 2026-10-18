@@ -25,7 +25,7 @@ func main() {
 			os.Exit(0)
 		}
 		if errors.Is(err, errVersion) {
-			fmt.Fprintln(os.Stdout, version.String())
+			fmt.Fprintln(os.Stdout, version.Current().String())
 			os.Exit(0)
 		}
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
