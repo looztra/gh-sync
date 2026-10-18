@@ -37,7 +37,7 @@ Branches without explicit tracking configuration are matched by name against the
 
 ### ⚙️ Flags
 
-```
+```text
 --verbose, -v     Log each git command to stderr
 --dry-run, -n     Preview changes; no branch is moved or deleted
 --version, -V     Show version information
@@ -49,38 +49,38 @@ Branches without explicit tracking configuration are matched by name against the
 
 Fast-forward a branch that fell behind:
 
-```
+```text
 Updated branch feature-login (was 3a1b2c4).
 ```
 
 Warn about local work that hasn't been pushed:
 
-```
+```text
 warning: 'experiment' seems to contain unpushed commits
 ```
 
 Clean up a merged branch whose remote was deleted:
 
-```
+```text
 Deleted branch add-user-api (was 7f8e9d0).
 ```
 
 Preview the same run with `--dry-run`:
 
-```
+```text
 Would update branch feature-login (3a1b2c4 -> 9c8b7a6).
 Would delete branch add-user-api (was 7f8e9d0): merged into main
 ```
 
 Skip a branch that is checked out in another worktree (git can't delete it):
 
-```
+```text
 skipped add-user-api: checked out in worktree /home/me/work/add-user-api
 ```
 
 If such a branch is unmerged, the usual warning is followed by a note:
 
-```
+```text
 warning: 'experiment' was deleted on origin, but appears not merged into 'main'
 note: 'experiment' is checked out in worktree /home/me/work/experiment
 ```

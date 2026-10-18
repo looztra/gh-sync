@@ -1,0 +1,71 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace # Trims trailing whitespace
+      - id: check-yaml # Validates YAML files
+        args: [--allow-multiple-documents]
+      - id: check-toml # Validates TOML files
+      - id: check-json # Validates JSON files
+      - id: check-added-large-files # Checks for files that are added to the repository that are larger than a threshold
+      - id: check-case-conflict # Checks for files that would conflict in case-insensitive filesystems
+      - id: check-merge-conflict # Checks for files that contain merge conflict strings
+      - id: detect-private-key # Check for the existence of private keys
+      - id: check-executables-have-shebangs # Checks that executables have shebangs
+      - id: end-of-file-fixer # Makes sure files end in a newline and only a newline
+
+  - repo: https://gitlab.com/bmares/check-json5
+    rev: v1.0.1
+    hooks:
+      - id: check-json5
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.3
+    hooks:
+      - id: markdownlint-cli2
+        pass_filenames: false
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shellcheck # Shell scripts conform to shellcheck
+      - id: shfmt # Check shell style with shfmt
+
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [--config-data, relaxed, --no-warnings]
+
+  - repo: https://github.com/looztra/yamkix
+    rev: v1.2.0
+    hooks:
+      - id: yamkix
+        args: [--silent, --list-modified]
+
+  - repo: local
+    hooks:
+      - id: taplo
+        name: Check TOML files are formatted with 'taplo'
+        entry: taplo format --config .taplo.toml
+        types: [toml]
+        language: system
+        pass_filenames: false
+      - id: editorconfig-checker
+        name: Check .editorconfig rules with 'editorconfig-checker'
+        entry: editorconfig-checker
+        types: [text]
+        language: system
+        pass_filenames: false
+      - id: gofmt
+        name: Check Go files are formatted with 'gofmt'
+        entry: gofmt -l -w
+        types: [go]
+        language: system
+      - id: go-vet
+        name: Run 'go vet ./...'
+        entry: go vet ./...
+        types: [go]
+        language: system
+        pass_filenames: false

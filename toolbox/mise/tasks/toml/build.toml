@@ -5,6 +5,6 @@ run = "script/build.sh"
 ["build:version"]
 description = "Build then print the resolved version line"
 run = [
-    "script/build.sh",
-    "./gh-sync --version",
+  "script/build.sh",
+  "./gh-sync --version",
 ]
