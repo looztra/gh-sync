@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/looztra/gh-sync/compare/v1.1.0...v1.1.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **deps:** patch Go toolchain and x/sys advisories, add lint checks ([1fc4c61](https://github.com/looztra/gh-sync/commit/1fc4c618f9d666b96757349ea502cabca5f3f72e))
+
 ## [1.1.0](https://github.com/looztra/gh-sync/compare/v1.0.0...v1.1.0) (2026-10-18)
 
 
